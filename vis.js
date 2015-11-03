@@ -35,14 +35,15 @@
         .attr('cy', function(pt) { return h - pt.y; })
         .on('click', function(c, pt) {
         });
-    map.on('click', function(item, c) {
+    map.on('click', function(item) {
+        console.log(this, item)
         d3.select(this)
             .append('text')
-            .attr('x', x(item.x))
-            .attr('y', y(item.y))
+            .attr('x', item.x)
+            .attr('y', h - item.y)
             .attr('font-family', 'sans-serif')
             .attr('font-size', '8')
-            .text(item.lines.join(', '));
+            .text(item.lines.join(',\n'));
     })
 
     function fzoom() {
