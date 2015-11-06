@@ -3,6 +3,34 @@
     <head>
         <meta charset="utf-8">
         <title></title>
+        <style media="screen">
+            body {
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+            }
+            .active {
+                fill: red;
+            }
+            .tier1 {
+                fill: green;
+            }
+            .inactive {
+                fill: black;
+            }
+            .route-list {
+                font-family: sans-serif;
+                font-size: 8px;
+                fill: black;
+                opacity: .5;
+            }
+            .active text {
+                visibility: visible;
+            }
+            .inactive text {
+                visibility: hidden;
+            }
+        </style>
     </head>
     <body>
         <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>

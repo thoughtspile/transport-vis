@@ -1,4 +1,23 @@
 var io = require('fs')
+var _ = require('lodash')
+
+
+function mean(arr, key) {
+    return _.sum(arr, key) / arr.length;
+}
+
+function union(into, arr) {
+    return arr.reduce(function(acc, el) {
+        if (acc.indexOf(el) === -1)
+            acc.push(el);
+        return acc;
+    }, into);
+}
+
+function distr(data) {
+    return [_.min(data), mean(data), _.max(data)].join(', ');
+}
+
 
 var walk2 = 3;
 var walk = Math.sqrt(walk2);
@@ -12,85 +31,95 @@ var reach = function(c1, c2) {
     return dx * dx + dy * dy <= walk2;
 };
 
-function mean(arr, key) {
-    return arr.reduce(function(a, item) {
-        return a + item[key]; }, 0) / arr.length;
+
+function renameAndNormalize(acc, raw, i) {
+    var item = {
+        x: raw['Cells']['Longitude_WGS84'],
+        y: raw['Cells']['Latitude_WGS84'],
+        name: raw['Cells']['StationName'] || raw['Cells']['Name'],
+        lines: raw['Cells']['RouteNumbers'].replace(/ /g, '').split(';')
+    };
+    item.x = (item.x - 37.3) * 1000;
+    item.y = (item.y - 55.5) * 1300;
+    item.name = [item.name
+        .replace(/\s*\(((пос|выс|к\/ст)\.?\,?\s*)+\)\s*/g, '')];
+    if (!item.lines[0].match(/Маршруты\s?Мосгортранса\s?не\s?проходят/))
+        acc.push(item);
+    return acc;
 }
 
-function union(arr, into) {
-    return arr.reduce(function(acc, el) {
-        if (acc.indexOf(el) === -1)
-            acc.push(el);
-        return acc;
-    }, into);
-}
-
-io.readFile(__dirname + '/ground.json', function(err, str) {
-    var data = JSON.parse(str).map(function(item) {
-        var item = {
-            x: item['Cells']['Longitude_WGS84'],
-            y: item['Cells']['Latitude_WGS84'],
-            lines: item['Cells']['RouteNumbers'].replace(' ', '').split(';')
-        };
-        item.x = (item.x - 37.3) * 1000;
-        item.y = (item.y - 55.5) * 1300;
-        return item;
-    });
-
-    data = data.reduce(function(clusters, pt) {
-        var close = clusters.filter(function(cluster) {
-            return reach(pt, cluster);
-        });
-        if (close.length == 0) {
-            clusters.push(pt);
-            return clusters;
-        }
-        close.forEach(function(clust) {
-            clusters.splice(clusters.indexOf(clust), 1);
-        }, []);
-        close.push(pt);
-        var aggregate = {
-            x: mean(close, 'x'),
-            y: mean(close, 'y'),
-            lines: close.reduce(function(acc, item) {
-                return union(item.lines, acc);
-            }, [])
-        };
-        clusters.push(aggregate);
+function cluster(clusters, pt) {
+    var close = _.remove(clusters, reach.bind(null, pt));
+    if (_.isEmpty(close)) {
+        clusters.push(pt);
         return clusters;
-    }, []);
-    console.log(data.length, 'aggregated');
-
-    var lines = {};
-    data.forEach(function(item) {
-        item.lines.forEach(function(lineI) {
-            lines[lineI] = (lines[lineI] || 0) + 1;
-        });
-
-        item.lineCount = item.lines.length;
+    }
+    close.push(pt);
+    clusters.push({
+        x: mean(close, 'x'),
+        y: mean(close, 'y'),
+        name: _.union.apply(null, _.map(close, 'name')),
+        lines: _.union.apply(null, _.map(close, 'lines'))
     });
+    return clusters;
+}
 
-    var lineTiers = {};
-    data.forEach(function(item) {
-        item.tier1 = item.lines.reduce(function(acc, lineI) {
-            return acc + lines[lineI];
-        }, 0);
-        item.lines.forEach(function(lineI) {
-            lineTiers[lineI] = union(item.lines, lineTiers[lineI] || []);
-        });
-    });
 
-    data.forEach(function(item) {
-        item.tier2 = item.lines.reduce(function(acc, lineI) {
-            return acc + lineTiers[lineI].reduce(
-                function(acc, lineI) { return acc + lines[lineI]; },
-                0);
-        }, 0);
-    })
+var data = _.chain(io.readFileSync(__dirname + '/ground.json'))
+    .thru(JSON.parse)
+    .tap(function(data) { console.log(data[0]); })
+    //.take(500)
+    .reduce(renameAndNormalize, [])
+    .reduce(cluster, [])
+    .tap(function(data) { console.log(data.length, 'aggregated'); })
+    .value();
 
-    console.log(data[0])
-    io.writeFile(
-        __dirname + '/ground_coord.json',
-        'var stops = ' + JSON.stringify(data, null, '\t')
-    );
+var lineNames = _.union.apply(null, _.map(data, 'lines'));
+
+var stopsByLine = {};
+_.forEach(lineNames, function(line) { stopsByLine[line] = []; });
+var getStopsByLine = function(i) { return stopsByLine[i]; };
+_.forEach(data, function(st, i) {
+    _.invoke(st.lines.map(getStopsByLine), 'push', i);
 });
+
+var intersecting = _.reduce(data, function(counts, st) {
+    _.forEach(st.lines, function(lineI) {
+        counts[lineI] = _.union(st.lines, counts[lineI]);
+    });
+    return counts;
+}, {});
+var getIntersecting = function(i) { return intersecting[i]; };
+
+data.forEach(function(item) {
+    item.tier1 = item.lines
+        .map(getStopsByLine)
+        .reduce(union, [])
+        .length;
+});
+
+data.forEach(function(item) {
+    item.tier2 = _.chain(item.lines)
+        .map(getIntersecting)
+        .invoke('map', getStopsByLine)
+        .invoke('reduce', union, []) // this reference worries me
+        .reduce(union, [])
+        .size()
+        .value();
+});
+
+data.forEach(function(st) { st.name = st.name.join(', '); });
+
+console.log('tier 1:', distr(_.map(data, 'tier1')));
+console.log('tier 2:', distr(_.map(data, 'tier2')));
+console.log('sample: ', data[0]);
+
+io.writeFileSync(
+    __dirname + '/ground_coord.json',
+    'var stops = ' + JSON.stringify(data, null, '\t') +
+    ';\nvar limits = ' +
+    JSON.stringify([
+        [_.min(data, 'x').x, _.max(data, 'x').x],
+        [_.min(data, 'y').y, _.max(data, 'y').y]
+    ])
+);
