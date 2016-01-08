@@ -31,10 +31,18 @@
                 visibility: hidden;
             }
         </style>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" media="screen" >
     </head>
-    <body>
+    <body class='container'>
+
+        <div class='row'>
+            <div class='col-sm-4' id='cluster-container'></div>
+            <div class='col-sm-8' id='map-container'></div>
+        </div>
+
         <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
         <script src="ground_coord.json" charset="utf-8"></script>
+
         <script src="vis.js" charset="utf-8"></script>
     </body>
 </html>

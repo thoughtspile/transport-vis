@@ -50,16 +50,15 @@ function renameAndNormalize(acc, raw, i) {
 
 function cluster(clusters, pt) {
     var close = _.remove(clusters, reach.bind(null, pt));
-    if (_.isEmpty(close)) {
-        clusters.push(pt);
-        return clusters;
-    }
     close.push(pt);
     clusters.push({
         x: mean(close, 'x'),
         y: mean(close, 'y'),
         name: _.union.apply(null, _.map(close, 'name')),
-        lines: _.union.apply(null, _.map(close, 'lines'))
+        lines: _.union.apply(null, _.map(close, 'lines')),
+        stops: close.map(function(stop) {
+            return { x: stop.x, y: stop.y };
+        })
     });
     return clusters;
 }
@@ -77,8 +76,12 @@ var data = _.chain(io.readFileSync(__dirname + '/ground.json'))
 var lineNames = _.union.apply(null, _.map(data, 'lines'));
 
 var stopsByLine = {};
-_.forEach(lineNames, function(line) { stopsByLine[line] = []; });
-var getStopsByLine = function(i) { return stopsByLine[i]; };
+_.forEach(lineNames, function(line) {
+    stopsByLine[line] = [];
+});
+var getStopsByLine = function(i) {
+    return stopsByLine[i];
+};
 _.forEach(data, function(st, i) {
     _.invoke(st.lines.map(getStopsByLine), 'push', i);
 });
@@ -89,7 +92,9 @@ var intersecting = _.reduce(data, function(counts, st) {
     });
     return counts;
 }, {});
-var getIntersecting = function(i) { return intersecting[i]; };
+var getIntersecting = function(i) {
+    return intersecting[i];
+};
 
 data.forEach(function(item) {
     item.tier1 = item.lines
