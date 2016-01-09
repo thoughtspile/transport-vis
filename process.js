@@ -19,7 +19,7 @@ function distr(data) {
 }
 
 
-var walk2 = 3;
+var walk2 = .0001;
 var walk = Math.sqrt(walk2);
 var reach = function(c1, c2) {
     var dx = Math.abs(c1.x - c2.x);
@@ -39,8 +39,8 @@ function renameAndNormalize(acc, raw, i) {
         name: raw['Cells']['StationName'] || raw['Cells']['Name'],
         lines: raw['Cells']['RouteNumbers'].replace(/ /g, '').split(';')
     };
-    item.x = (item.x - 37.3) * 1000;
-    item.y = (item.y - 55.5) * 1300;
+    // item.x = (item.x - 37.3) * 1000;
+    // item.y = (item.y - 55.5) * 1300;
     item.name = [item.name
         .replace(/\s*\(((пос|выс|к\/ст)\.?\,?\s*)+\)\s*/g, '')];
     if (!item.lines[0].match(/Маршруты\s?Мосгортранса\s?не\s?проходят/))
@@ -56,9 +56,9 @@ function cluster(clusters, pt) {
         y: mean(close, 'y'),
         name: _.union.apply(null, _.map(close, 'name')),
         lines: _.union.apply(null, _.map(close, 'lines')),
-        stops: close.map(function(stop) {
-            return { x: stop.x, y: stop.y };
-        })
+        stops: _.union.apply(null, close.map(function(clust) {
+            return clust.stops || [{ x: clust.x, y: clust.y }];
+        }))
     });
     return clusters;
 }
