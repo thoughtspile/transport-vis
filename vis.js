@@ -1,10 +1,29 @@
 (function(containers) {
+    var customMapType = new google.maps.StyledMapType([
+        {
+            stylers: [
+                {visibility: 'simplified'},
+                {gamma: 0.5},
+                {weight: 0.5}
+            ]
+        }, {
+            elementType: 'labels',
+            stylers: [{visibility: 'off'}]
+        }], {
+            name: 'Custom Style'
+    });
+    var customMapTypeId = 'custom_style';
+
     var googleMap = new google.maps.Map(d3.select(containers.map).node(), {
         zoom: 8,
         center: new google.maps.LatLng(55.751244, 37.618423),
-        mapTypeId: google.maps.MapTypeId.ROADMAP
+        mapTypeControlOptions: {
+            mapTypeIds: [google.maps.MapTypeId.ROADMAP, customMapTypeId]
+        }
     });
-    google.maps.Ma
+
+    googleMap.mapTypes.set(customMapTypeId, customMapType);
+    googleMap.setMapTypeId(customMapTypeId);
 
     var overlay = new google.maps.OverlayView();
     google.maps.event.trigger(googleMap, 'resize');

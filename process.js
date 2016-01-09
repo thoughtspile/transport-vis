@@ -19,7 +19,7 @@ function distr(data) {
 }
 
 
-var walk2 = .0001;
+var walk2 = .00001;
 var walk = Math.sqrt(walk2);
 var reach = function(c1, c2) {
     var dx = Math.abs(c1.x - c2.x);
