@@ -27,16 +27,16 @@
                     .attr('height', 40);
 
             marker.append('circle')
-                .attr('opacity', '.25')
-                .attr('cx', padding)
-                .attr('cy', padding)
-                .attr('r', function(pt) { return rScale(pt.tiers[2]); });
-            marker.append('circle')
                 .attr('opacity', '.5')
                 .attr('cx', padding)
                 .attr('cy', padding)
                 .attr('r', function(pt) { return rScale(pt.tiers[1]); });
-            marker.on('click', interactions.toggleActive);
+            marker.append('circle')
+                .attr('opacity', '.25')
+                .attr('cx', padding)
+                .attr('cy', padding)
+                .attr('r', function(pt) { if (!pt.tiers[2]) console.log(pt); return rScale(pt.tiers[2]); })
+                .on('click', interactions.toggleActive);
 
             function transform(d) {
                 d = new google.maps.LatLng(d.y, d.x);
