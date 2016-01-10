@@ -34,5 +34,6 @@ module.exports = function(data, tierCount) {
     });
     data.forEach(function(item) {
         item.tiers = _.map(item.tiers, 'length');
+        item.importance = _.sum(item.tiers.map((w, i) => w / (i + 1)));
     });
 }
