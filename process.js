@@ -67,14 +67,16 @@ function cluster(clusters, pt) {
 var data = _.chain(io.readFileSync(__dirname + '/ground.json'))
     .thru(JSON.parse)
     .tap(function(data) { console.log(data[0]); })
-    //.take(500)
+    // .take(50)
     .reduce(renameAndNormalize, [])
     .reduce(cluster, [])
     .tap(function(data) { console.log(data.length, 'aggregated'); })
     .value();
 
-var lineNames = _.union.apply(null, _.map(data, 'lines'));
 
+
+// prepare line hash
+var lineNames = _.union.apply(null, _.map(data, 'lines'));
 var stopsByLine = {};
 _.forEach(lineNames, function(line) {
     stopsByLine[line] = [];
@@ -83,37 +85,27 @@ var getStopsByLine = function(i) {
     return stopsByLine[i];
 };
 _.forEach(data, function(st, i) {
-    _.invoke(st.lines.map(getStopsByLine), 'push', i);
+    _.invoke(st.lines.map(getStopsByLine), 'push', st);
 });
 
-var intersecting = _.reduce(data, function(counts, st) {
-    _.forEach(st.lines, function(lineI) {
-        counts[lineI] = _.union(st.lines, counts[lineI]);
+// get tiers
+data.forEach(function(item) {
+    item.tiers = [[item]];
+});
+_.range(1, 3).forEach(function(i) {
+    data.forEach(function(item) {
+        var lines = _.union.apply(_, _.map(item.tiers[i - 1], 'lines'));
+        item.tiers[i] = _.union.apply(_, lines.map(getStopsByLine));
     });
-    return counts;
-}, {});
-var getIntersecting = function(i) {
-    return intersecting[i];
-};
-
+});
 data.forEach(function(item) {
-    item.tier1 = item.lines
-        .map(getStopsByLine)
-        .reduce(union, [])
-        .length;
+    item.tiers = _.map(item.tiers, 'length');
 });
 
-data.forEach(function(item) {
-    item.tier2 = _.chain(item.lines)
-        .map(getIntersecting)
-        .invoke('map', getStopsByLine)
-        .invoke('reduce', union, []) // this reference worries me
-        .reduce(union, [])
-        .size()
-        .value();
+// turn names into a string (why do that?)
+data.forEach(function(st) {
+    st.name = st.name.join(', ');
 });
-
-data.forEach(function(st) { st.name = st.name.join(', '); });
 
 console.log('tier 1:', distr(_.map(data, 'tier1')));
 console.log('tier 2:', distr(_.map(data, 'tier2')));
