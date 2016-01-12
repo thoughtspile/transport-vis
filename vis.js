@@ -24,9 +24,14 @@
             stop.latLng = new google.maps.LatLng(stop.y, stop.x);
         });
 
+        var left = d3.min(stops.map(function(p) { return p.x; }));
+        var right = d3.max(stops.map(function(p) { return p.x; }));
+        var top = d3.min(stops.map(function(p) { return p.y; }));
+        var bottom = d3.max(stops.map(function(p) { return p.y; }));
+
+        // var baseSvg = layer.append('svg');
+
         overlay.draw = function(evt) {
-            alert(evt)
-            // var s = Date.now();
             var projection = this.getProjection();
             var viewport = this.getMap().getBounds();
             var zoom = this.getMap().getZoom();
@@ -53,7 +58,9 @@
                     .on('click', function(d) {
                         interactions.toggleActive.call(this, d, projection)
                     });
-            marker.each(transform).each(function(d) { renderCluster.call(this, d, projection) });
+            marker.each(transform);
+
+            renderCluster(null, projection);
 
             function transform(d) {
                 var offset = rScale(d.importance);
@@ -65,9 +72,6 @@
                     .style("left", pos.x - offset + "px")
                     .style("top", pos.y - offset + "px");
             }
-
-            // var clusters = d3.select(containers.clusters);
-            // console.log(Date.now() - s)
         };
     });
 }({ map: '#map-container', clusters: '#cluster-container' }));
