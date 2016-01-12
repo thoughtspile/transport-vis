@@ -1,12 +1,13 @@
 function behaviors(focused) {
-    function toggleActivated(item) {
+    function toggleActivated(item, projection) {
+        console.log('HELLO')
         if (focused.indexOf(item) == -1)
             focused.push(item);
         else
             focused.splice(focused.indexOf(item), 1);
         toggleMeta.call(this, item);
         // toggleTier1.call(this, item);
-        // toggleCluster.call(this, item);
+        toggleCluster.call(this, item, projection);
     }
 
 
