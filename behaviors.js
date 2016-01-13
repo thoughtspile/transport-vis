@@ -1,6 +1,5 @@
 function behaviors(focused) {
     function toggleActivated(item, projection) {
-        console.log('HELLO')
         if (focused.indexOf(item) == -1)
             focused.push(item);
         else
@@ -52,6 +51,7 @@ function behaviors(focused) {
                 return item.tier1sel > 0;
             });
     }
+
 
     return {
         toggleActive: toggleActivated

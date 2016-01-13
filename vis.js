@@ -22,6 +22,7 @@
 
         stops.forEach(function(stop) {
             stop.latLng = new google.maps.LatLng(stop.y, stop.x);
+            stop.bounds = convexHull(stop.stops);
         });
 
         var left = d3.min(stops.map(function(p) { return p.x; }));
@@ -48,19 +49,22 @@
             marker.exit().remove();
             marker.enter()
                 .append('svg')
-                .attr('viewBox', '0 0 2 2')
                 .attr('class', 'marker')
-                .append('circle')
-                    .attr('opacity', .5)
-                    .attr('r', '1')
-                    .attr('cx', '1')
-                    .attr('cy', '1')
-                    .on('click', function(d) {
-                        interactions.toggleActive.call(this, d, projection)
-                    });
-            marker.each(transform);
+                .style('opacity', function(d) { return d.importance / maxTier; })
+                // .attr('viewBox', '0 0 2 2')
+                // .append('circle')
+                //     .attr('opacity', .5)
+                //     .attr('r', '1')
+                //     .attr('cx', '1')
+                //     .attr('cy', '1')
+                //     .on('click', function(d) {
+                //         interactions.toggleActive.call(this, d, projection)
+                //     });
+            marker
+                .each(transform)
+                .each(function(d) { clusterGraph.call(this, d, projection); });
 
-            renderCluster(null, projection);
+            // renderCluster(null, projection);
 
             function transform(d) {
                 var offset = rScale(d.importance);
