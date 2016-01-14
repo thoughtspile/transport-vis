@@ -2,17 +2,7 @@ var _ = require('lodash');
 
 module.exports = function(data, tierCount) {
     // prepare line hash
-    var lineNames = _.union.apply(null, _.map(data, 'lines'));
-    var stopsByLine = {};
-    _.forEach(lineNames, function(line) {
-        stopsByLine[line] = [];
-    });
-    var getStopsByLine = function(i) {
-        return stopsByLine[i];
-    };
-    _.forEach(data, function(st, i) {
-        _.invoke(st.lines.map(getStopsByLine), 'push', st);
-    });
+    var getStopsByLine = module.exports.lines(data).get;
 
     data.forEach(function(item) {
         item.tiers = [[item]];
@@ -36,4 +26,19 @@ module.exports = function(data, tierCount) {
         item.tiers = _.map(item.tiers, 'length');
         item.importance = _.sum(item.tiers.map((w, i) => w / (i + 1)));
     });
+}
+
+module.exports.lines = function(data) {
+    var lineNames = _.union.apply(null, _.map(data, 'lines'));
+    var stopsByLine = {};
+    _.forEach(lineNames, function(line) {
+        stopsByLine[line] = [];
+    });
+    var getStopsByLine = function(i) {
+        return stopsByLine[i];
+    };
+    _.forEach(data, function(st, i) {
+        _.invoke(st.lines.map(getStopsByLine), 'push', st);
+    });
+    return { data: stopsByLine, get: getStopsByLine };
 }

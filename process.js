@@ -36,6 +36,7 @@ function logResults(data) {
     console.log('sample: ', data[0]);
 }
 
+// var lines = [];
 
 var data = _.chain(io.readFileSync(__dirname + '/ground.json'))
     .thru(JSON.parse)
@@ -43,8 +44,10 @@ var data = _.chain(io.readFileSync(__dirname + '/ground.json'))
     // .take(50)
     .reduce(renameAndNormalize, [])
     .reduce(cluster, [])
+    .map(cluster.rollup)
     .tap(function(data) { console.log(data.length, 'aggregated'); })
     .tap(data => processTiers(data, 5))
+    // .tap(data => { lines = processTiers.lines(data).data; })
     .tap(data => data.forEach(st => st.name = st.name.join(', ')))
     .tap(logResults)
     .value();
@@ -54,3 +57,4 @@ io.writeFileSync(
     __dirname + '/ground_coord.json',
     'var stops = ' + JSON.stringify(data, null, '\t')
 );
+// io.writeFileSync(__dirname + '/routes.json', JSON.stringify(Object.keys(lines)))

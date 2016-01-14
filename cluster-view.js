@@ -74,6 +74,8 @@ function drawEdges(wrapper, edges, left, top) {
 }
 
 function drawBounds(wrapper, nodes, left, top) {
+    if (nodes.length < 3)
+        return drawMarker.call(this, wrapper);
     var drawHull = d3.svg.line()
         .x(function(d) { return d.x - left + offset; })
         .y(function(d) { return d.y - top + offset; })
@@ -87,6 +89,17 @@ function drawBounds(wrapper, nodes, left, top) {
     wrapper.selectAll('path')
         .datum(nodes)
         .attr('d', drawHull);
+    return wrapper;
+}
+
+function drawMarker(wrapper) {
+    wrapper.selectAll('circle')
+        .data([this])
+        .enter()
+            .append('circle')
+            .attr('r', 1)
+            .attr('cx', 1)
+            .attr('cy', 1);
     return wrapper;
 }
 
