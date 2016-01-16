@@ -50,11 +50,26 @@ function offset(arr, w) {
     return conv(pairwise);
 }
 
+var nodes = [
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 0, y: 1 }
+];
 var edges = [
-    { x: -1, y: 1 },
-    { x: 1, y: 1 },
-    { x: 1, y: 0}
+    [0, 1],
+    [1, 2],
+    [2, 0]
 ];
 var w = 1;
 
-console.log(offset(edges, w));
+var nodeVecs = nodes.map((pos, i) => {
+    return edges.reduce((acc, ij) => {
+        var side = ij.indexOf(i);
+        if (side !== -1)
+            acc.push(sum(nodes[ij[1 - side]], times(-1, nodes[ij[side]])))
+        return acc;
+    }, []);
+})
+console.log(nodeVecs)
+
+console.log(offset(nodeVecs[0], w));
